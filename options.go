@@ -16,7 +16,15 @@ type Options struct {
 	Name             string   `json:"name" mapstructure:"name"`
 }
 
-type Option func(*Options) error
+type Option interface {
+	apply(*Options) error
+}
+
+type optionFunc func(*Options) error
+
+func (f optionFunc) apply(o *Options) error {
+	return f(o)
+}
 
 func New(opts ...Option) *Options {
 	options := &Options{
@@ -27,7 +35,7 @@ func New(opts ...Option) *Options {
 		Name:             "",
 	}
 	for _, opt := range opts {
-		if err := opt(options); err != nil {
+		if err := opt.apply(options); err != nil {
 			// TODO: do not panic
 			panic("Log new error")
 		}
@@ -36,46 +44,46 @@ func New(opts ...Option) *Options {
 }
 
 func WithLogLevel(level Level) Option {
-	return func(o *Options) error {
+	return optionFunc(func(o *Options) error {
 		o.LogLevel = level
 		return nil
-	}
+	})
 }
 
 func WithOutputPaths(paths []string) Option {
-	return func(o *Options) error {
+	return optionFunc(func(o *Options) error {
 		for _, v := range paths {
 			o.OutputPaths = append(o.OutputPaths, v)
 		}
 		return nil
-	}
+	})
 }
 
 func WithErrorOutputPaths(paths []string) Option {
-	return func(o *Options) error {
+	return optionFunc(func(o *Options) error {
 		for _, v := range paths {
 			o.ErrorOutputPaths = append(o.ErrorOutputPaths, v)
 		}
 		return nil
-	}
+	})
 }
 
 func WithFormat(f string) Option {
-	return func(o *Options) error {
+	return optionFunc(func(o *Options) error {
 		if f == "" {
 			return errors.New("format should not be empty")
 		}
 		o.Format = f
 		return nil
-	}
+	})
 }
 
 func WithName(n string) Option {
-	return func(o *Options) error {
+	return optionFunc(func(o *Options) error {
 		if n == "" {
 			return errors.New("name should not be empty")
 		}
 		o.Name = n
 		return nil
-	}
+	})
 }
