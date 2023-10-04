@@ -2,28 +2,113 @@ package llog
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"sync"
 )
 
 var _ Logger = (*stdLogger)(nil)
 
-type stdLogger struct {
-	log  *log.Logger
-	pool *sync.Pool
+type StdOption interface {
+	apply(*StdConfig) error
 }
 
-func NewStdLogger(w io.Writer) Logger {
-	return &stdLogger{
-		log: log.New(w, "", 0),
+var colorsLen = 6
+
+type StdConfig struct {
+	Writer io.Writer
+	// Info Debug Warn Error Fatal
+	Colors  map[Level][]Color
+	Colored bool
+}
+
+type stdopfunc func(*StdConfig) error
+
+func (s stdopfunc) apply(sc *StdConfig) error {
+	return s(sc)
+}
+
+type stdLogger struct {
+	log    *log.Logger
+	pool   *sync.Pool
+	stdcfg *StdConfig
+}
+
+func WithStdWriter(w io.Writer) StdOption {
+	return stdopfunc(func(sc *StdConfig) error {
+		sc.Writer = w
+		return nil
+	})
+}
+
+func WithStdColors(cs map[Level][]Color) StdOption {
+	return stdopfunc(func(sc *StdConfig) error {
+		// cs's length should be le then 6
+		if len(cs) > colorsLen {
+			return errors.New("colors should be no more than 6")
+		}
+		for level, colour := range cs {
+			if len(colour) != len(sc.Colors[level]) {
+				return errors.New(fmt.Sprintf("two much color attributes for: %d", level))
+			}
+			copy(sc.Colors[level], colour)
+		}
+		return nil
+	})
+}
+
+func WithStdColored(c bool) StdOption {
+	return stdopfunc(func(sc *StdConfig) error {
+		sc.Colored = c
+		return nil
+	})
+}
+
+// TODO: lock
+func NewStdLogger(opts ...StdOption) Logger {
+	cfg := &StdConfig{
+		Colored: true,
+		Writer:  os.Stdin,
+		Colors: map[Level][]Color{
+			Info: {
+				FgWhite,
+				BgWhite,
+			},
+			Debug: {
+				FgWhite,
+				BgCyan,
+			},
+			Warn: {
+				FgWhite,
+				BgYellow,
+			},
+			Error: {
+				FgWhite,
+				BgRed,
+			},
+			Fatal: {
+				BgRed,
+				FgBlack,
+			},
+			// Fatal
+		},
+	}
+	l := &stdLogger{
 		pool: &sync.Pool{
 			New: func() any {
 				return new(bytes.Buffer)
 			},
 		},
 	}
+	for _, o := range opts {
+		o.apply(cfg)
+	}
+	l.log = log.New(cfg.Writer, "", 0)
+	l.stdcfg = cfg
+	return l
 }
 
 func (l *stdLogger) Log(level Level, keyvals ...any) error {
@@ -34,7 +119,28 @@ func (l *stdLogger) Log(level Level, keyvals ...any) error {
 		keyvals = append(keyvals, "KEYVALS UNPAIRED")
 	}
 	buf := l.pool.Get().(*bytes.Buffer)
-	buf.WriteString(level.String())
+	var ws string
+	if !l.stdcfg.Colored {
+		ws = level.String()
+		goto blank
+	}
+	switch level {
+	case Debug:
+		ws = WithColor(level.String(), l.stdcfg.Colors[Debug]...)
+	case Info:
+		ws = WithColor(level.String(), l.stdcfg.Colors[Info]...)
+	case Warn:
+		ws = WithColor(level.String(), l.stdcfg.Colors[Warn]...)
+	case Error:
+		ws = WithColor(level.String(), l.stdcfg.Colors[Error]...)
+	case Fatal:
+		ws = WithColor(level.String(), l.stdcfg.Colors[Fatal]...)
+	default:
+		ws = WithColor(level.String(), l.stdcfg.Colors[Info]...)
+	}
+blank:
+	buf.WriteString(ws)
+	// TODO: maybe this should be colored？
 	for i := 0; i < len(keyvals); i += 2 {
 		_, _ = fmt.Fprintf(buf, " %s=%v", keyvals[i], keyvals[i+1])
 	}
