@@ -10,11 +10,12 @@ func TestStdLog(t *testing.T) {
 		WithStdColored(true),
 		// WithStdColored(false),
 		WithStdWriter(log.Writer()),
+		WithStdTimeFormat("2006-01-02 15:04"),
 	)
-	logger.Log(Info, "Infokey", "Infoval")
-	logger.Log(Debug, "Debugkey", "Debugval")
-	logger.Log(Warn, "Warnkey", "Warnval")
-	logger.Log(Error, "Errorkey", "Errorval")
-	logger.Log(Fatal, "Fatalkey", "Fatalval")
+	logger.Log(Info, "STD: Infokey", "Infoval")
+	logger.Log(Debug, "STD: Debugkey", "Debugval")
+	logger.Log(Warn, "STD: Warnkey", "Warnval")
+	logger.Log(Error, "STD: Errorkey", "Errorval")
+	logger.Log(Fatal, "STD: Fatalkey", "Fatalval")
 	// assert.Equal(t, "hello", "hello")
 }
