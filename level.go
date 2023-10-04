@@ -5,7 +5,7 @@ import "strings"
 type Level int8
 
 const (
-	Debug Level = iota - 1
+	Debug Level = iota + 1
 	Info
 	Warn
 	Error
