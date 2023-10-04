@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 )
 
 var _ Logger = (*stdLogger)(nil)
@@ -21,8 +22,10 @@ var colorsLen = 6
 type StdConfig struct {
 	Writer io.Writer
 	// Info Debug Warn Error Fatal
-	Colors  map[Level][]Color
-	Colored bool
+	Colors     map[Level][]Color
+	Colored    bool
+	TimeFormat string
+	TimeZone   *time.Location
 }
 
 type stdopfunc func(*StdConfig) error
@@ -35,6 +38,26 @@ type stdLogger struct {
 	log    *log.Logger
 	pool   *sync.Pool
 	stdcfg *StdConfig
+}
+
+func WithStdTimeFormat(format string) StdOption {
+	return stdopfunc(func(sc *StdConfig) error {
+		if format == "" {
+			return errors.New("time format empty")
+		}
+		sc.TimeFormat = format
+		return nil
+	})
+}
+
+func WithStdTimeZone(tz *time.Location) StdOption {
+	return stdopfunc(func(sc *StdConfig) error {
+		if tz == nil {
+			return errors.New("time zone nil")
+		}
+		sc.TimeZone = tz
+		return nil
+	})
 }
 
 func WithStdWriter(w io.Writer) StdOption {
@@ -95,6 +118,8 @@ func NewStdLogger(opts ...StdOption) Logger {
 			},
 			// Fatal
 		},
+		TimeFormat: "2006-01-02 15:04:05",
+		TimeZone:   time.Now().UTC().Location(),
 	}
 	l := &stdLogger{
 		pool: &sync.Pool{
@@ -140,9 +165,10 @@ func (l *stdLogger) Log(level Level, keyvals ...any) error {
 	}
 blank:
 	buf.WriteString(ws)
+	fmt.Fprintf(buf, " time: %v", time.Now().Format(l.stdcfg.TimeFormat))
 	// TODO: maybe this should be colored？
 	for i := 0; i < len(keyvals); i += 2 {
-		_, _ = fmt.Fprintf(buf, " %s=%v", keyvals[i], keyvals[i+1])
+		_, _ = fmt.Fprintf(buf, " %s: %v", keyvals[i], keyvals[i+1])
 	}
 	_ = l.log.Output(4, buf.String())
 	buf.Reset()
