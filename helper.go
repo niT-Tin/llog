@@ -49,7 +49,7 @@ func WithSprintf(spf func(format string, a ...any) string) HelperOption {
 func NewHelper(logger Logger, opts ...HelperOption) *Helper {
 	options := &Helper{
 		msgKey:  DefaultMessageKey,
-		logger:  logger,
+		logger:  logger.Clone().AddCallerSkip(1),
 		sprint:  fmt.Sprint,
 		sprintf: fmt.Sprintf,
 	}
