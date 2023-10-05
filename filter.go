@@ -1,6 +1,8 @@
 package llog
 
-import "context"
+import (
+	"context"
+)
 
 type FilterOption interface {
 	apply(*Filter)
@@ -13,6 +15,8 @@ func (ff filterOptionfunc) apply(f *Filter) {
 }
 
 const fuzzyStr = "***"
+
+var _ Logger = (*Filter)(nil)
 
 // some from kratos
 type Filter struct {
@@ -28,7 +32,8 @@ type Filter struct {
 
 func NewFilter(logger Logger, opts ...FilterOption) *Filter {
 	f := &Filter{
-		logger: logger,
+		// 添加一层caller skip，Filter内调用
+		logger: logger.Clone().AddCallerSkip(1),
 		key:    make(map[interface{}]struct{}),
 		value:  make(map[interface{}]struct{}),
 	}
@@ -65,6 +70,24 @@ func WithLevel(level Level) FilterOption {
 		o.level = level
 	},
 	)
+}
+
+// Filter 中间层调用底部logger的caller skip
+func (f *Filter) AddCallerSkip(skip int) Logger {
+	f.logger.AddCallerSkip(skip)
+	return f
+}
+
+func (f *Filter) GetCallerSkip() int {
+	return f.logger.GetCallerSkip()
+}
+
+func (f *Filter) Clone() Logger {
+	// cloned := &Filter{}
+	cloend_logger := f.logger.Clone()
+	cloned := *f
+	cloned.logger = cloend_logger
+	return &cloned
 }
 
 func (f *Filter) Log(l Level, keyvals ...any) error {

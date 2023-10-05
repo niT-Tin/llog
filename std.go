@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -35,9 +36,10 @@ func (s stdopfunc) apply(sc *StdConfig) error {
 }
 
 type stdLogger struct {
-	log    *log.Logger
-	pool   *sync.Pool
-	stdcfg *StdConfig
+	log        *log.Logger
+	pool       *sync.Pool
+	callerSkip int
+	stdcfg     *StdConfig
 }
 
 func WithStdTimeFormat(format string) StdOption {
@@ -136,6 +138,22 @@ func NewStdLogger(opts ...StdOption) Logger {
 	return l
 }
 
+// 底层logger的caller skip
+func (l *stdLogger) AddCallerSkip(skip int) Logger {
+	l.callerSkip += skip
+	return l
+}
+
+func (l *stdLogger) GetCallerSkip() int {
+	return l.callerSkip
+}
+
+func (l *stdLogger) Clone() Logger {
+	cloned := &stdLogger{}
+	*cloned = *l
+	return cloned
+}
+
 func (l *stdLogger) Log(level Level, keyvals ...any) error {
 	if len(keyvals) == 0 {
 		return nil
@@ -144,6 +162,10 @@ func (l *stdLogger) Log(level Level, keyvals ...any) error {
 		keyvals = append(keyvals, "KEYVALS UNPAIRED")
 	}
 	buf := l.pool.Get().(*bytes.Buffer)
+	stack := captureStacktrace(l.callerSkip)
+	defer stack.Free()
+	frame, _ := stack.Next()
+	file, line := frame.File, frame.Line
 	var ws string
 	if !l.stdcfg.Colored {
 		ws = level.String()
@@ -165,7 +187,15 @@ func (l *stdLogger) Log(level Level, keyvals ...any) error {
 	}
 blank:
 	buf.WriteString(ws)
-	fmt.Fprintf(buf, " time: %v", time.Now().Format(l.stdcfg.TimeFormat))
+	var path string
+	idx := strings.LastIndexByte(file, '/')
+	if idx == -1 {
+		path = file + ":" + fmt.Sprintf("%d", line)
+	} else {
+		idx = strings.LastIndexByte(file[:idx], '/')
+		path = file[idx+1:] + ":" + fmt.Sprintf("%d", line)
+	}
+	fmt.Fprintf(buf, " %s time: %v", path, time.Now().Format(l.stdcfg.TimeFormat))
 	// TODO: maybe this should be colored？
 	for i := 0; i < len(keyvals); i += 2 {
 		_, _ = fmt.Fprintf(buf, " %s: %v", keyvals[i], keyvals[i+1])
