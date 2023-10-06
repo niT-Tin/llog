@@ -100,7 +100,7 @@ func NewStdLogger(opts ...StdOption) Logger {
 		Colors: map[Level][]Color{
 			Info: {
 				FgWhite,
-				BgWhite,
+				BgGreen,
 			},
 			Debug: {
 				FgWhite,
