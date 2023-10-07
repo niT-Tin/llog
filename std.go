@@ -120,7 +120,7 @@ func NewStdLogger(opts ...StdOption) Logger {
 			},
 			// Fatal
 		},
-		TimeFormat: "2006-01-02 15:04:05",
+		TimeFormat: "2006-01-02 15:04:05.000",
 		TimeZone:   time.Now().UTC().Location(),
 	}
 	l := &stdLogger{
@@ -169,21 +169,28 @@ func (l *stdLogger) Log(level Level, keyvals ...any) error {
 	var ws string
 	if !l.stdcfg.Colored {
 		ws = level.String()
+		ws = fmt.Sprintf("%v %9s", time.Now().Format(l.stdcfg.TimeFormat), ws)
 		goto blank
 	}
 	switch level {
 	case Debug:
 		ws = WithColor(level.String(), l.stdcfg.Colors[Debug]...)
+		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), ws), l.stdcfg.Colors[Debug]...)
 	case Info:
 		ws = WithColor(level.String(), l.stdcfg.Colors[Info]...)
+		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), ws), l.stdcfg.Colors[Info]...)
 	case Warn:
 		ws = WithColor(level.String(), l.stdcfg.Colors[Warn]...)
+		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), ws), l.stdcfg.Colors[Warn]...)
 	case Error:
 		ws = WithColor(level.String(), l.stdcfg.Colors[Error]...)
+		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), ws), l.stdcfg.Colors[Error]...)
 	case Fatal:
 		ws = WithColor(level.String(), l.stdcfg.Colors[Fatal]...)
+		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), ws), l.stdcfg.Colors[Fatal]...)
 	default:
 		ws = WithColor(level.String(), l.stdcfg.Colors[Info]...)
+		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), ws), l.stdcfg.Colors[Info]...)
 	}
 blank:
 	buf.WriteString(ws)
@@ -195,12 +202,15 @@ blank:
 		idx = strings.LastIndexByte(file[:idx], '/')
 		path = file[idx+1:] + ":" + fmt.Sprintf("%d", line)
 	}
-	fmt.Fprintf(buf, " %s time: %v", path, time.Now().Format(l.stdcfg.TimeFormat))
+	fmt.Fprintf(buf, " %s", path)
 	// TODO: maybe this should be colored？
 	for i := 0; i < len(keyvals); i += 2 {
 		_, _ = fmt.Fprintf(buf, " %s: %v", keyvals[i], keyvals[i+1])
 	}
 	_ = l.log.Output(4, buf.String())
+	if level == Fatal {
+		os.Exit(1)
+	}
 	buf.Reset()
 	l.pool.Put(buf)
 	return nil
