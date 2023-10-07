@@ -51,7 +51,7 @@ func WithFilterKeys(keys ...string) FilterOption {
 	})
 }
 
-func WithFilterVlaues(values ...string) FilterOption {
+func WithFilterValues(values ...string) FilterOption {
 	return filterOptionfunc(func(f *Filter) {
 		for _, v := range values {
 			f.value[v] = struct{}{}
@@ -95,7 +95,7 @@ func (f *Filter) Log(l Level, keyvals ...any) error {
 		return nil
 	}
 	if f.filter != nil && (f.filter(l, keyvals...)) {
-		return nil
+		return f.logger.Log(l, keyvals...)
 	}
 	if len(f.key) > 0 || len(f.value) > 0 {
 		for i := 0; i < len(keyvals); i += 2 {
