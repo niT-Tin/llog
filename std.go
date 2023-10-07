@@ -99,24 +99,24 @@ func NewStdLogger(opts ...StdOption) Logger {
 		Writer:  os.Stdin,
 		Colors: map[Level][]Color{
 			Info: {
-				FgWhite,
-				BgGreen,
+				// FgWhite,
+				FgGreen,
 			},
 			Debug: {
-				FgWhite,
-				BgCyan,
+				FgCyan,
+				// BgCyan,
 			},
 			Warn: {
-				FgWhite,
-				BgYellow,
+				// FgWhite,
+				FgYellow,
 			},
 			Error: {
-				FgWhite,
-				BgRed,
+				// FgWhite,
+				FgRed,
 			},
 			Fatal: {
-				BgRed,
-				FgBlack,
+				// BgRed,
+				FgRed,
 			},
 			// Fatal
 		},
