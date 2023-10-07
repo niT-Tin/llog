@@ -199,7 +199,7 @@ blank:
 		idx = strings.LastIndexByte(file[:idx], '/')
 		path = file[idx+1:] + ":" + fmt.Sprintf("%d", line)
 	}
-	fmt.Fprintf(buf, " %s", path)
+	fmt.Fprintf(buf, " [%s]", path)
 	// TODO: maybe this should be colored？
 	for i := 0; i < len(keyvals); i += 2 {
 		_, _ = fmt.Fprintf(buf, " %s: %v", keyvals[i], keyvals[i+1])
