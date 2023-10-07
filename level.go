@@ -15,15 +15,15 @@ const (
 func (l Level) String() string {
 	switch l {
 	case Debug:
-		return "DEBUG"
+		return "DEBU"
 	case Info:
 		return "INFO"
 	case Warn:
 		return "WARN"
 	case Error:
-		return "ERROR"
+		return "ERRO"
 	case Fatal:
-		return "FATAL"
+		return "FATA"
 	default:
 		return ""
 	}
@@ -33,15 +33,15 @@ func (l Level) String() string {
 
 func ParseLevel(s string) Level {
 	switch strings.ToUpper(s) {
-	case "DEBUG":
+	case "DEBU":
 		return Debug
 	case "INFO":
 		return Info
 	case "WARN":
 		return Warn
-	case "ERROR":
+	case "ERRO":
 		return Error
-	case "FATAL":
+	case "FATA":
 		return Fatal
 	}
 	return Info
