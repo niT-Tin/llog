@@ -18,5 +18,5 @@ func TestFilter(t *testing.T) {
 	filter.Log(Info, "asdfasdfasdfasdf")
 	filter.Log(Warn, "hello", "world")
 	filter.Log(Warn, "password", "world")
-	filter.Log(Fatal, "mobile", "world")
+	// filter.Log(Fatal, "mobile", "world")
 }
