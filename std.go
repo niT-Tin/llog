@@ -76,10 +76,7 @@ func WithStdColors(cs map[Level][]Color) StdOption {
 			return errors.New("colors should be no more than 6")
 		}
 		for level, colour := range cs {
-			if len(colour) != len(sc.Colors[level]) {
-				return errors.New(fmt.Sprintf("two much color attributes for: %d", level))
-			}
-			copy(sc.Colors[level], colour)
+			sc.Colors[level] = colour
 		}
 		return nil
 	})
@@ -96,7 +93,7 @@ func WithStdColored(c bool) StdOption {
 func NewStdLogger(opts ...StdOption) Logger {
 	cfg := &StdConfig{
 		Colored: true,
-		Writer:  os.Stdin,
+		Writer:  os.Stdout,
 		Colors: map[Level][]Color{
 			Info: {
 				// FgWhite,
