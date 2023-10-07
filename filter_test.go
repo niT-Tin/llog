@@ -13,6 +13,18 @@ func TestFilter(t *testing.T) {
 		logger,
 		WithFilterKeys("password", "mobile"),
 		WithLevel(Warn),
+		WithFilterValues("world"),
+		WithFilterFunc(func(level Level, keyvals ...interface{}) bool {
+			if level == Warn {
+				for i := 0; i < len(keyvals); i += 2 {
+					if keyvals[i] == "password" {
+						keyvals[i+1] = "******"
+						return true
+					}
+				}
+			}
+			return false
+		}),
 	)
 	// nothing
 	filter.Log(Info, "asdfasdfasdfasdf")
