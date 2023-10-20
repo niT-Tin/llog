@@ -3,7 +3,7 @@
 ## Install
 
 ```bash
-
+go get -u github.com/niT-Tin/llog
 ```
 ## Usage
 
