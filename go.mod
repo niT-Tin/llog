@@ -1,4 +1,4 @@
-module lzhorn.log/llog
+module github.com/niT-Tin/llog
 
 go 1.20
 
