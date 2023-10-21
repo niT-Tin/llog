@@ -24,7 +24,7 @@ stdlogger是llog最底层默认使用的Log接口的实现，如果不想使用�
 ```go
 package main
 
-import "lzhorn.log/llog"
+import "github.com/niT-Tin/llog"
 
 func main() {
     llog.DefaultLogger.Log(llog.Debug, "key", "value")
