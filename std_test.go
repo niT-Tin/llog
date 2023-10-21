@@ -24,5 +24,9 @@ func TestStdLog(t *testing.T) {
 	newLogger := NewStdLogger(
 		WithStdColors(colorMap),
 	)
+	nextNewLogger := NewStdLogger(
+	// WithStdTimeFormat("2006-01-02 15:04"),
+	)
 	newLogger.Log(Info, "STD: Infokey", "Infoval")
+	nextNewLogger.Log(Info, "STD: Infokey", "Infoval")
 }
