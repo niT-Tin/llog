@@ -171,23 +171,17 @@ func (l *stdLogger) Log(level Level, keyvals ...any) error {
 	}
 	switch level {
 	case Debug:
-		ws = WithColor(level.String(), l.stdcfg.Colors[Debug]...)
-		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), ws), l.stdcfg.Colors[Debug]...)
+		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), level.String()), l.stdcfg.Colors[Debug]...)
 	case Info:
-		ws = WithColor(level.String(), l.stdcfg.Colors[Info]...)
-		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), ws), l.stdcfg.Colors[Info]...)
+		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), level.String()), l.stdcfg.Colors[Info]...)
 	case Warn:
-		ws = WithColor(level.String(), l.stdcfg.Colors[Warn]...)
-		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), ws), l.stdcfg.Colors[Warn]...)
+		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), level.String()), l.stdcfg.Colors[Warn]...)
 	case Error:
-		ws = WithColor(level.String(), l.stdcfg.Colors[Error]...)
-		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), ws), l.stdcfg.Colors[Error]...)
+		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), level.String()), l.stdcfg.Colors[Error]...)
 	case Fatal:
-		ws = WithColor(level.String(), l.stdcfg.Colors[Fatal]...)
-		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), ws), l.stdcfg.Colors[Fatal]...)
+		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), level.String()), l.stdcfg.Colors[Fatal]...)
 	default:
-		ws = WithColor(level.String(), l.stdcfg.Colors[Info]...)
-		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), ws), l.stdcfg.Colors[Info]...)
+		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), level.String()), l.stdcfg.Colors[Info]...)
 	}
 blank:
 	buf.WriteString(ws)
