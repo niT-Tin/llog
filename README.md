@@ -16,7 +16,9 @@ llog.Ghelper.Warn("key", "value")
 llog.Ghelper.Error("key", "value")
 llog.Ghelper.Fatal("key", "value")
 ```
-<img src="./pics/simple.png" align='left'/>
+<img src="./pics/simple.png" align='center'/>
+
+---
 
 ### Stdlogger
 
@@ -49,7 +51,7 @@ func main() {
 }
 
 ```
-<img src="./pics/default.png" align='left'/>
+<img src="./pics/default.png" align='center'/>
 
 ### Global
 
@@ -89,7 +91,7 @@ func main() {
 
 ```
 
-<img src="./pics/ghelper.png" align='left'/>
+<img src="./pics/ghelper.png" align='center'/>
 
 ### Filter
 
@@ -131,7 +133,7 @@ logger := llog.NewStdLogger(
 
 ```
 
-<img src="./pics/filtert.png" align='left'/>
+<img src="./pics/filtert.png" align='center'/>
 
 ### Helper
 
@@ -155,7 +157,7 @@ helper.Infow("nothing")
 helper.Warnw("password", "world")
 ```
 
-<img src="./pics/helpert.png" align='left'/>
+<img src="./pics/helpert.png" align='center'/>
 
 ## Interface
 
