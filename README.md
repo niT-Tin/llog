@@ -18,6 +18,7 @@ llog.Ghelper.Fatal("key", "value")
 ```
 <img src="./pics/simple.png" align='left'/>
 
+---
 
 ### Stdlogger
 
