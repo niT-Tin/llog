@@ -3,7 +3,7 @@
 ## Install
 
 ```bash
-
+go get -u github.com/niT-Tin/llog
 ```
 ## Usage
 
@@ -16,6 +16,7 @@ llog.Ghelper.Warn("key", "value")
 llog.Ghelper.Error("key", "value")
 llog.Ghelper.Fatal("key", "value")
 ```
+<img src="./pics/simple.png" align='left'/>
 
 ### Stdlogger
 
@@ -48,6 +49,7 @@ func main() {
 }
 
 ```
+<img src="./pics/default.png" align='left'/>
 
 ### Global
 
@@ -62,30 +64,32 @@ func main() {
 	llog.Glogger.Log(llog.Info, "key", "value")
 	llog.Glogger.Log(llog.Warn, "key", "value")
 	llog.Glogger.Log(llog.Error, "key", "value")
-	llog.Glogger.Log(llog.Fatal, "key", "value")
+	// llog.Glogger.Log(llog.Fatal, "key", "value")
     // Ghelper
 	llog.Ghelper.Debug("key", "value")
 	llog.Ghelper.Info("key", "value")
 	llog.Ghelper.Warn("key", "value")
 	llog.Ghelper.Error("key", "value")
-	llog.Ghelper.Fatal("key", "value")
+	// llog.Ghelper.Fatal("key", "value")
 
     // 带w后缀的函数不会打印MessageKey的内容，该内容可以在创建helper时设置
 	llog.Ghelper.Debugw("key1", "value1", "key2", "value2")
 	llog.Ghelper.Infow("key1", "value1", "key2", "value2")
 	llog.Ghelper.Warnw("key1", "value1", "key2", "value2")
 	llog.Ghelper.Errorw("key1", "value1", "key2", "value2")
-	llog.Ghelper.Fatalw("key1", "value1", "key2", "value2")
+	// llog.Ghelper.Fatalw("key1", "value1", "key2", "value2")
 
     // with format
 	llog.Ghelper.Debugf("This is a format key1 %s key2 %s", "value1", "value2")
 	llog.Ghelper.Infof("This is a format key1 %s key2 %s", "value1", "value2")
 	llog.Ghelper.Warnf("This is a format key1 %s key2 %s", "value1", "value2")
 	llog.Ghelper.Errorf("This is a format key1 %s key2 %s", "value1", "value2")
-	llog.Ghelper.Fatalf("This is a format key1 %s key2 %s", "value1", "value2")
+	// llog.Ghelper.Fatalf("This is a format key1 %s key2 %s", "value1", "value2")
 }
 
 ```
+
+<img src="./pics/ghelper.png" align='left'/>
 
 ### Filter
 
@@ -106,7 +110,7 @@ logger := llog.NewStdLogger(
 			}
 		}
 		return false
-
+    }
 	filter := llog.NewFilter(
 		logger,
 		// password和mobile作为key的kv键值对，v会被***代替
@@ -126,6 +130,8 @@ logger := llog.NewStdLogger(
 	filter.Log(llog.Warn, "password", "world") // password Warn等级与customFilter内匹配并且password也被匹配，world被自定义字符串掩盖
 
 ```
+
+<img src="./pics/filtert.png" align='left'/>
 
 ### Helper
 
@@ -148,6 +154,8 @@ helper = llog.NewHelper(
 helper.Infow("nothing")
 helper.Warnw("password", "world")
 ```
+
+<img src="./pics/helpert.png" align='left'/>
 
 ## Interface
 
