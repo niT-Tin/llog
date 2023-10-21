@@ -18,6 +18,7 @@ llog.Ghelper.Fatal("key", "value")
 ```
 <img src="./pics/simple.png" align='left'/>
 
+
 ### Stdlogger
 
 stdlogger是llog最底层默认使用的Log接口的实现，如果不想使用任何额外配置，可以使用默认的DefaultLogger。
