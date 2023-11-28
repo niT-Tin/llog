@@ -1,7 +1,6 @@
 package llog
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,7 +10,8 @@ func TestHelper(t *testing.T) {
 
 	helper := NewHelper(
 		NewFilter(
-			NewStdLogger(WithStdWriter(os.Stdout)),
+			// NewStdLogger(WithStdWriter(os.Stdout)),
+			NewStdLogger(),
 			WithLevel(Warn),
 			WithFilterKeys("password", "mobile"),
 		),
@@ -25,7 +25,8 @@ func TestHelper(t *testing.T) {
 }
 
 func TestClone(t *testing.T) {
-	stdlog := NewStdLogger(WithStdWriter(os.Stdout))
+	// stdlog := NewStdLogger(WithStdWriter(os.Stdout))
+	stdlog := NewStdLogger()
 	filter_1 := NewFilter(stdlog)
 	filter_2 := filter_1.Clone().(*Filter)
 	filter_1.AddCallerSkip(1)
@@ -35,7 +36,8 @@ func TestClone(t *testing.T) {
 }
 
 func TestHelperClone(t *testing.T) {
-	stdlog := NewStdLogger(WithStdWriter(os.Stdout))
+	// stdlog := NewStdLogger(WithStdWriter(os.Stdout))
+	stdlog := NewStdLogger()
 	filter_1 := NewFilter(stdlog)
 	helper_1 := NewHelper(filter_1)
 	filter_2 := filter_1.Clone().(*Filter)
@@ -49,11 +51,12 @@ func TestHelperClone(t *testing.T) {
 }
 
 func TestHelperWrite(t *testing.T) {
-	file, err := os.OpenFile("file.log", os.O_APPEND|os.O_RDWR|os.O_CREATE, 0666)
-	if err != nil {
-		panic(err)
-	}
-	logger := NewStdLogger(WithStdWriter(file))
+	logger := NewStdLogger(
+		WithBackUp(true),
+		WithLogFile("file.log"),
+		WithMaxLogSize(1*Kb),
+		WithStdOut(false),
+	)
 	helper := NewHelper(
 		NewFilter(
 			logger,
