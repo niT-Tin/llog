@@ -1,13 +1,12 @@
 package llog
 
 import (
-	"log"
 	"testing"
 )
 
 func TestFilter(t *testing.T) {
 	logger := NewStdLogger(
-		WithStdWriter(log.Writer()),
+	// WithStdWriter(log.Writer()),
 	)
 	filter := NewFilter(
 		logger,

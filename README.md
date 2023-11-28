@@ -40,7 +40,18 @@ func main() {
     // 设置Info等级的fg与bg颜色
 	colorMap[llog.Info] = []llog.Color{llog.FgYellow, llog.BgGreen}
 	logger := llog.NewStdLogger(
-		llog.WithStdWriter(os.Stdout),
+        // 关闭标准输出选项，默认打开为true
+        WithStdOut(false),
+        // 是否将日志写入文件并且开启切割，默认为false,
+        // 如果为true,则开启，并且默认单个最大日志文件为100Mb
+		WithBackUp(true),
+        // 是否输出到标准错误
+        WithStdErr(false),
+        // 设置单个日志文件最大大小
+		WithMaxLogSize(1*Kb),
+        // 日志文件名，如果中间文件夹不存在则会自动创建
+        // 默认日志名为`llog.log`
+		WithLogFile("/tmp/log/llog.log"),
         // 默认开启颜色，需要关闭可设置为false
 		llog.WithStdColored(true),
 		llog.WithStdTimeZone(time.UTC),

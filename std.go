@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
-	"log"
 	"os"
 	"strings"
 	"sync"
@@ -20,8 +18,27 @@ type StdOption interface {
 
 var colorsLen = 6
 
+const (
+	b = 1 << (10 * iota) // byte
+	Kb
+	Mb
+	Gb
+	Tb
+	perm = 0700
+	// Pb
+)
+
 type StdConfig struct {
-	Writer io.Writer
+	// 日志输出基础文件名
+	LogFile string
+	// 是否在达到指定大小时切换文件
+	IsBackup bool
+	// 日志文件大小
+	MaxLogSize int64
+	// 是否启用标准输出
+	IsStdOut bool
+	// 是否启用标准错误
+	IsStdErr bool
 	// Info Debug Warn Error Fatal
 	Colors     map[Level][]Color
 	Colored    bool
@@ -36,10 +53,45 @@ func (s stdopfunc) apply(sc *StdConfig) error {
 }
 
 type stdLogger struct {
-	log        *log.Logger
 	pool       *sync.Pool
 	callerSkip int
 	stdcfg     *StdConfig
+	logfile    *os.File
+	// io         *IO
+}
+
+func WithStdOut(c bool) StdOption {
+	return stdopfunc(func(sc *StdConfig) error {
+		sc.IsStdOut = c
+		return nil
+	})
+}
+
+func WithStdErr(c bool) StdOption {
+	return stdopfunc(func(sc *StdConfig) error {
+		sc.IsStdErr = c
+		return nil
+	})
+}
+func WithMaxLogSize(sz int64) StdOption {
+	return stdopfunc(func(sc *StdConfig) error {
+		sc.MaxLogSize = sz
+		return nil
+	})
+}
+
+func WithBackUp(c bool) StdOption {
+	return stdopfunc(func(sc *StdConfig) error {
+		sc.IsBackup = c
+		return nil
+	})
+}
+
+func WithLogFile(f string) StdOption {
+	return stdopfunc(func(sc *StdConfig) error {
+		sc.LogFile = f
+		return nil
+	})
 }
 
 func WithStdTimeFormat(format string) StdOption {
@@ -58,13 +110,6 @@ func WithStdTimeZone(tz *time.Location) StdOption {
 			return errors.New("time zone nil")
 		}
 		sc.TimeZone = tz
-		return nil
-	})
-}
-
-func WithStdWriter(w io.Writer) StdOption {
-	return stdopfunc(func(sc *StdConfig) error {
-		sc.Writer = w
 		return nil
 	})
 }
@@ -93,7 +138,6 @@ func WithStdColored(c bool) StdOption {
 func NewStdLogger(opts ...StdOption) Logger {
 	cfg := &StdConfig{
 		Colored: true,
-		Writer:  os.Stdout,
 		Colors: map[Level][]Color{
 			Info: {
 				// FgWhite,
@@ -119,6 +163,11 @@ func NewStdLogger(opts ...StdOption) Logger {
 		},
 		TimeFormat: "2006-01-02 15:04:05.000",
 		TimeZone:   time.Now().UTC().Location(),
+		IsBackup:   false,    // 默认在文件到达MaxLogSize大小时要切换文件
+		MaxLogSize: 100 * Mb, // 默认文件大小为100日志mb
+		IsStdOut:   true,     // 默认开启标准输出
+		IsStdErr:   false,    // 默认关闭标准错误
+		LogFile:    "llog.log",
 	}
 	l := &stdLogger{
 		pool: &sync.Pool{
@@ -130,7 +179,16 @@ func NewStdLogger(opts ...StdOption) Logger {
 	for _, o := range opts {
 		o.apply(cfg)
 	}
-	l.log = log.New(cfg.Writer, "", 0)
+	if !cfg.IsBackup {
+		l.stdcfg = cfg
+		return l
+	}
+	f := OpenFile(cfg.LogFile, os.O_CREATE|os.O_APPEND|os.O_RDWR, perm)
+	if f == nil {
+		l.stdcfg = cfg
+		return l
+	}
+	l.logfile = f
 	l.stdcfg = cfg
 	return l
 }
@@ -151,15 +209,15 @@ func (l *stdLogger) Clone() Logger {
 	return cloned
 }
 
-func (l *stdLogger) Log(level Level, keyvals ...any) error {
+func buildstring(l *stdLogger, level Level, keyvals ...any) (builded string, raw string) {
 	if len(keyvals) == 0 {
-		return nil
+		return "", ""
 	}
 	if (len(keyvals) & 1) == 1 {
 		keyvals = append(keyvals, "KEYVALS UNPAIRED")
 	}
 	buf := l.pool.Get().(*bytes.Buffer)
-	stack := captureStacktrace(l.callerSkip)
+	stack := captureStacktrace(l.callerSkip + 1)
 	defer stack.Free()
 	frame, _ := stack.Next()
 	file, line := frame.File, frame.Line
@@ -167,21 +225,26 @@ func (l *stdLogger) Log(level Level, keyvals ...any) error {
 	if !l.stdcfg.Colored {
 		ws = level.String()
 		ws = fmt.Sprintf("%v %9s", time.Now().Format(l.stdcfg.TimeFormat), ws)
+		// 构建没有颜色的字符串前部份
+		raw += ws
 		goto blank
 	}
+	// 构建有颜色的字符串前部份
+	builded = fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), level.String())
+	raw = fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), level.String())
 	switch level {
 	case Debug:
-		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), level.String()), l.stdcfg.Colors[Debug]...)
+		ws = WithColor(builded, l.stdcfg.Colors[Debug]...)
 	case Info:
-		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), level.String()), l.stdcfg.Colors[Info]...)
+		ws = WithColor(builded, l.stdcfg.Colors[Info]...)
 	case Warn:
-		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), level.String()), l.stdcfg.Colors[Warn]...)
+		ws = WithColor(builded, l.stdcfg.Colors[Warn]...)
 	case Error:
-		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), level.String()), l.stdcfg.Colors[Error]...)
+		ws = WithColor(builded, l.stdcfg.Colors[Error]...)
 	case Fatal:
-		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), level.String()), l.stdcfg.Colors[Fatal]...)
+		ws = WithColor(builded, l.stdcfg.Colors[Fatal]...)
 	default:
-		ws = WithColor(fmt.Sprintf("%v %20s", time.Now().Format(l.stdcfg.TimeFormat), level.String()), l.stdcfg.Colors[Info]...)
+		ws = WithColor(builded, l.stdcfg.Colors[Info]...)
 	}
 blank:
 	buf.WriteString(ws)
@@ -196,13 +259,62 @@ blank:
 	fmt.Fprintf(buf, " [%s]", path)
 	// TODO: maybe this should be colored？
 	for i := 0; i < len(keyvals); i += 2 {
+		raw += fmt.Sprintf(" %s: %v", keyvals[i], keyvals[i+1])
 		_, _ = fmt.Fprintf(buf, " %s: %v", keyvals[i], keyvals[i+1])
 	}
-	_ = l.log.Output(4, buf.String())
+	res := buf.String()
+	buf.Reset()
+	l.pool.Put(buf)
+	return res, raw
+}
+
+func (l *stdLogger) backup() bool {
+	if !l.stdcfg.IsBackup {
+		return true
+	}
+	fi, err := l.logfile.Stat()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return false
+	}
+	// 如果当前文件大小已经达到设置的备份大小，则进行备份
+	if fi.Size() >= l.stdcfg.MaxLogSize {
+		// 重新创建并打开一个新文件
+		f := OpenFile(fmt.Sprintf("%s-%d.log", l.stdcfg.LogFile, time.Now().UnixNano()), os.O_CREATE|os.O_APPEND|os.O_RDWR, perm)
+		if f == nil {
+			fmt.Fprintln(os.Stderr, "new log file created failed")
+			return false
+		}
+		// 关闭当前日志文件
+		l.logfile.Close()
+		l.logfile = f
+		return true
+	}
+	return true
+}
+
+func (l *stdLogger) Log(level Level, keyvals ...any) error {
+	s, raw := buildstring(l, level, keyvals...)
+	if l.stdcfg.IsStdOut {
+		// TODO: 暂时stdout直接使用fmt
+		fmt.Fprintln(os.Stdout, s)
+	}
+	if l.stdcfg.IsStdErr {
+		fmt.Fprintln(os.Stderr, s)
+	}
+	if l.stdcfg.IsBackup {
+		if !l.backup() {
+			return errors.New("back to file error")
+		}
+		_, err := l.logfile.Write([]byte(raw + "\n"))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "log to file error")
+			return errors.New("log to file error")
+		}
+	}
+	// _ = l.log.Output(4, buf.String())
 	if level == Fatal {
 		os.Exit(1)
 	}
-	buf.Reset()
-	l.pool.Put(buf)
 	return nil
 }

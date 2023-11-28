@@ -1,13 +1,6 @@
 package llog
 
-import (
-	"context"
-	"log"
-)
-
-var DefaultLogger = NewStdLogger(
-	WithStdWriter(log.Writer()),
-)
+var DefaultLogger = NewStdLogger()
 
 type Logger interface {
 	Log(l Level, keyvals ...any) error
@@ -16,11 +9,12 @@ type Logger interface {
 	Clone() Logger
 }
 
-type logger struct {
-	logger Logger
-	ctx    context.Context
-}
+// TODO: maybe later
+// type logger struct {
+// 	logger Logger
+// 	ctx    context.Context
+// }
 
-func (l *logger) Log(lvl Level, keyvals ...any) error {
-	return l.logger.Log(lvl, keyvals...)
-}
+// func (l *logger) Log(lvl Level, keyvals ...any) error {
+// 	return l.logger.Log(lvl, keyvals...)
+// }
